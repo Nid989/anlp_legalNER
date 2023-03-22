@@ -59,6 +59,17 @@ def prediction_procedure(outputs: TokenClassifierOutput,
     return final_results
 
 def get_scores(p, ner_labels_encoding, ner_labels_list, full_rep: bool=False):
+    """
+    Args:
+        p: (tuple) includes lists of predictions [0] and lists of gold-labels [1]
+        ner_labels_encodings: (dict) ner_labels to unique index mapping
+        ner_labels_list: (list) unique ner_labels in the give dataset
+        full_rep: specifies whether to return overall results including class-wise
+            scores or not
+    Returns:
+        results: (dict); encompassing class-wise and overall scores for the following 
+             `f1-score`, `precision`, `recall`, and `accuracy`
+    """
     predictions, labels = p
     
     ignore_tags = [ner_labels_encoding['<s>'],
