@@ -1,33 +1,36 @@
-BATCH_SIZE: 32
-MAX_EPOCHS: 10
+BATCH_SIZE: 2
+MAX_EPOCHS: 20
 MAX_SEQUENCE_LEN: 256
 LEARNING_RATE: 1.0e-4
 WEIGHT_DECAY: 1.0e-4
 EARLY_STOPPING_THRESHOLD: 5
 
 SOURCE_COLUMN: "tokens"
-TARGET_COLUMN: "BIO_tags"
+TARGET_COLUMN: "BIOES_tags"
 # "BIO_tags" or "BIOES_tags"
 
-MODEL_CHECKPOINT: "xlm-roberta-base"
+MODEL_CHECKPOINT: "law-ai/InLegalBERT"
 # distilbert-base-uncased 
 # law-ai/InLegalBERT
 # xlm-roberta-base
 # roberta-base
-VERSION: "v6" # Transformer Encoder + Linear Chain CRF
-# v1 - Regular Finetunining on judgement data
-# v2 - Regular Finetuning with weighted CrossEntropyLoss on judgement data
-# v3 - Regular Finetuning with BIOES tagging on judgement data
-# v4 - Regualr Finetuning on preamble data
-# v5 - Dual Finetuning, preamble and judgement data
-# v6 - Regular Finetuning extended with CRF (Conditional Random Fields)
+VERSION: "v3"
+# v1 - regular finetunining on judgement data (BIO tagging)
+# v2 - regular finetuning with weighted CrossEntropyLoss on judgement data (BIO tagging)
+# v3 - regular finetuning with BIOES tagging on judgement data (BIOES tagging)
+# v4 - regualr finetuning on preamble data (BIO or BIOES tagging)
+# v5 - dual finetuning, preamble and judgement data # DISCUSS
+# v6 - regular finetuning extended with CRF (Conditional Random Fields) (BIO tagging)
+# v7 - regular finetuning extended with CRF (Conditional Random Fields) (BIOES tagging)
 EXTRACT_FORM: "judgement"
-# "judgement" or "preamble"
+# "judgement" or "preamble" -> type of InLegal data
+
 USE_CRF: True # Conditional Random Fields 
 
-
-PATH_TO_DATA_DIR: "./data" # path to data directory
+PATH_TO_DATA_DIR: "./data/" # path to data directory
 PATH_TO_CLASS_LABELS: "./data/judgement_class_labels.pkl" # TODO: add preamble file
+# ./data/judgement_class_labels.pkl -> judgement_data_class_labels
+# ./data/preamble_class_labels.pkl -> preamble_data_class_labels
 PATH_TO_RESULT_OUTPUT_DIR: "./results/" # path to results directory with `./results/val/` and `./results/test/` sub-directories
 PATH_TO_MODEL_OUTPUT_DIR: "./model_checkpoints/" # path to `trained (saved)` models directory
 

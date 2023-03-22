@@ -15,11 +15,11 @@ nlp = spacy.load('./en_core_web_sm') # load en_core_web_sm model
 tqdm.pandas()
 
 class InLegalNERDataset:
-    def __init__(self, device, tokenizer):
+    def __init__(self, tokenizer):
         
         self.batch_size = config_data["BATCH_SIZE"]
         self.max_seq_len = config_data["MAX_SEQUENCE_LEN"]
-        self.device = device
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = tokenizer
         self.source_column = config_data["SOURCE_COLUMN"]
         self.target_column = config_data["TARGET_COLUMN"]

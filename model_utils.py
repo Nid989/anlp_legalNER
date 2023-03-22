@@ -58,20 +58,20 @@ def prediction_procedure(outputs: TokenClassifierOutput,
 
     return final_results
 
-def get_scores(p, NER_label_encoding_dict, NER_labels_list, full_rep: bool=False):
+def get_scores(p, ner_labels_encoding, ner_labels_list, full_rep: bool=False):
     predictions, labels = p
     
-    ignore_tags = [NER_label_encoding_dict['<s>'],
-                   NER_label_encoding_dict['</s>'],
-                   NER_label_encoding_dict['<pad>']]
+    ignore_tags = [ner_labels_encoding['<s>'],
+                   ner_labels_encoding['</s>'],
+                   ner_labels_encoding['<pad>']]
 
     true_predictions = [
-        [NER_labels_list[p] for (p, l) in zip(prediction, label) if l not in ignore_tags]
+        [ner_labels_list[p] for (p, l) in zip(prediction, label) if l not in ignore_tags]
         for prediction, label in zip(predictions, labels)
     ]
 
     true_labels = [
-        [NER_labels_list[l] for (p, l) in zip(prediction, label) if l not in ignore_tags]
+        [ner_labels_list[l] for (p, l) in zip(prediction, label) if l not in ignore_tags]
         for prediction, label in zip(predictions, labels)
     ]
 
@@ -93,7 +93,20 @@ def get_scores(p, NER_label_encoding_dict, NER_labels_list, full_rep: bool=False
 def train_epoch(model,
                 data_loader,
                 optimizer,
-                device="cuda"):
+                use_crf:bool=False,
+                device = "cuda" if torch.cuda.is_available() else "cpu"):
+    """
+    Args:
+        model: PyTorch model, with a transformers based text-encoder
+        data_loader: PyTorch DataLoader; with specific batch_size; usually
+            depicting orchestration of training data
+        optimizer: PyTorch optimizer; used to tune model weights during 
+            back-propogation
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fiels
+    Returns:
+        Average loss over training epoch 
+    """
     model.train()
     epoch_train_loss = 0.0
     pbar = tqdm(data_loader, desc="Training Iteration")
@@ -101,26 +114,30 @@ def train_epoch(model,
         batch = tuple(t.to(device) for t in batch)
         input_ids, attention_mask, labels, mask = batch
         optimizer.zero_grad()
-
-        outputs = model(input_ids=input_ids,
-                     attention_mask=attention_mask,
-                     labels=labels,
-                     mask=mask,
-                     reduction='mean')
-        
+        if use_crf:
+            outputs = model(input_ids=input_ids,
+                            attention_mask=attention_mask,
+                            labels=labels,
+                            mask=mask,
+                            reduction='mean')
+        else:
+            outputs = model(input_ids=input_ids,
+                            attention_mask=attention_mask,
+                            labels=labels)
         loss = outputs.loss
         epoch_train_loss += loss.item()
 
         loss.backward()
         optimizer.step()
 
-        pbar.set_description('train_loss={0:.3f}'.format(loss.item()))
+        pbar.set_description('train_loss={0.3f}'.format(loss.item()))
 
     del batch
     del input_ids
     del attention_mask
     del labels
-    del mask
+    del mask 
+    del outputs
     del loss
     gc.collect()
     torch.cuda.empty_cache()
@@ -129,28 +146,46 @@ def train_epoch(model,
 
 def val_epoch(model,
               data_loader,
-              device="cuda"):
+              use_crf: bool=False,
+              device = "cuda" if torch.cuda.is_available() else "cpu"):
+    """
+    Args:
+        model: PyTorch model, with a transformers based text-encoder
+        data_loader: PyTorch DataLoader; with specific batch_size; usually
+            depicting orchestration of validation data
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fields
+    Returns:
+        Average loss over validation epoch 
+    """
     model.eval()
     epoch_val_loss = 0.0
     with torch.no_grad():
-        for step, batch in enumerate(tqdm(data_loader, desc="Validation Loss Iteration")):
+        pbar = tqdm(data_loader, desc="Validation Loss Iteration")
+        for step, batch in enumerate(pbar):
             batch = tuple(t.to(device) for t in batch)
             input_ids, attention_mask, labels, mask = batch
-
-            outputs = model(input_ids=input_ids,
-                          attention_mask=attention_mask,
-                          labels=labels,
-                          mask=mask,
-                          reduction='mean')
-            
+            if use_crf:
+                outputs = model(input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                labels=labels,
+                                mask=mask,
+                                reduction='mean')
+            else:
+                outputs = model(input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                labels=labels)
             loss = outputs.loss
             epoch_val_loss += loss.item()
 
+            pbar.set_description('val_loss={0.3f}'.format(loss.item()))
+    
     del batch
     del input_ids
     del attention_mask
     del labels
-    del mask
+    del mask 
+    del outputs
     del loss
     gc.collect()
     torch.cuda.empty_cache()
@@ -158,74 +193,103 @@ def val_epoch(model,
     return epoch_val_loss / step
 
 def test_epoch(model,
-               tokenizer,
                data_loader,
                desc,
-               device="cuda",
+               use_crf: bool=False,
+               device = "cuda" if torch.cuda.is_available() else "cpu",
                **gen_kwargs):
+    """
+    Args:
+        model: PyTorch model, with a transformers based text-encoder
+        data_loader: PyTorch DataLoader; with specific batch_size; usually
+            depicting orchestration of test data
+        desc: whether applying testing procedure over validation or test dataset
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fields
+    Returns:
+        Predictions over provided dataset orchestrated under the `data_loader`
+            alongwith gold-standard labels
+    """
     model.eval()
     out_predictions = []
     gold = []
     with torch.no_grad():
-        for step, batch in enumerate(tqdm(data_loader, desc=desc)):
+        pbar = tqdm(data_loader, desc=desc)
+        for step, batch in enumerate(pbar):
             batch = tuple(t.to(device) for t in batch)
             input_ids, attention_mask, labels, mask = batch
-
-            outputs = model(input_ids=input_ids,
-                                   attention_mask=attention_mask,
+            if use_crf:
+                outputs = model(input_ids=input_ids,
+                                attention_mask=attention_mask,
                                 **gen_kwargs)
-            
-            # check for the model outputs {loss, logits, hidden_states, attentions}
-            # print(outputs.logits.shape) ideally should be (batch_size x sequence_length x num_classes)
-            
-            # probabilities = F.softmax(seqs, dim=-1)
-            # predictions = probabilities.argmax(dim=-1).cpu().tolist()
+                predictions = outputs.predictions
 
-            predictions = outputs.predictions
-            
-            out_predictions.extend(predictions.cpu().tolist())
-            gold.extend(labels.cpu().tolist())
+                out_predictions.extend(predictions.cpu().tolist())
+                gold.extend(labels.cpu().tolist())
+            else:
+                outputs = model(input_ids=input_ids,
+                                attention_mask=attention_mask,
+                                **gen_kwargs)
+                probabilities = F.softmax(outputs.logits, dim=-1)
+                predictions = probabilities.argmax(dim=-1).cpu().tolist()
 
+                out_predictions.extend(predictions)
+                gold.extend(labels.cpu().tolist())
+    
     del batch
     del input_ids
     del attention_mask
     del labels
     del mask
-    # del probabilities
+    del outputs
     del predictions
     gc.collect()
-    torch.cuda.empty_cache()           
+    torch.cuda.empty_cache()
 
     return out_predictions, gold
 
 def get_val_scores(model,
-                   tokenizer,
                    data_loader,
                    desc,
                    epoch,
-                   NER_label_encoding_dict,
-                   NER_labels_list,
+                   ner_labels_encoding:dict,
+                   ner_labels_list: list,
+                   use_crf: bool=False,
                    **gen_kwargs):
-    predictions, gold = test_epoch(model,
-                                   tokenizer,
-                                   data_loader,
+    """
+    Args:
+        model: PyTorch model, with a transformers based text-encoder
+        data_loader: PyTorch DataLoader; with specific batch_size; usually
+            depicting orchestration of test data
+        desc: whether applying testing procedure over validation or test dataset
+        epoch: Epoch status at which the results are computed
+        ner_labels_encodings: (dict) ner_labels to unique index mapping
+        ner_labels_list: (list) unique ner_labels in the give dataset
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fields
+    Returns:
+        results: (dict); encompassing class-wise and overall scores for the following 
+             `f1-score`, `precision`, `recall`, and `accuracy`
+    """
+    predictions, gold = test_epoch(model=model,
+                                   data_loader=data_loader,
                                    desc=desc,
+                                   use_crf=use_crf,
                                    **gen_kwargs)
-    result = get_scores((predictions, gold),
-                        NER_label_encoding_dict=NER_label_encoding_dict,
-                        NER_labels_list=NER_labels_list)
-
-    MODEL_CHECKPOINT = config_data["MODEL_CHECKPOINT"]
-    VERSION = config_data["VERSION"]
-
+    result = get_scores(p=(predictions, gold),
+                        ner_labels_encoding=ner_labels_encoding,
+                        ner_labels_list=ner_labels_list) 
+    
+    model_checkpoint = config_data["MODEL_CHECKPOINT"]
+    version = config_data["VERSION"]
     if "Validation" in desc:
         val_df = pd.DataFrame(list(zip(gold, predictions)), columns=["ground_truth", "prediction"])
-        file_name = check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"] + "val/") + f"./{MODEL_CHECKPOINT.split('/')[-1]}_{VERSION}_epoch_" + str(epoch+1) + "_val_results.csv"
+        file_name = check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"] + "val/") + f"./{model_checkpoint.split('/')[-1]}_{version}_epoch_" + str(epoch+1) + "_val_results.csv"
         val_df.to_csv(file_name, index=False)
         print("Validation File Saved")
     elif "Test" in desc:
         test_df = pd.DataFrame(list(zip(gold, predictions)), columns=["ground_truth", "prediction"])
-        file_name = check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"] + "test/") + f"./{MODEL_CHECKPOINT.split('/')[-1]}_{VERSION}_epoch_" + str(epoch+1) + "_test_results.csv"
+        file_name = check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"] + "test/") + f"./{model_checkpoint.split('/')[-1]}_{version}_epoch_" + str(epoch+1) + "_test_results.csv"
         test_df.to_csv(file_name, index=False)
         print("Test File Saved")
     
@@ -274,9 +338,15 @@ def save_model(model,
     _save(model, output_dir, tokenizer=tokenizer, state_dict=state_dict)
 
 def train(model,
-          tokenizer,
           dataset,
           **gen_kwargs):
+    """
+    Args:
+        model: PyTorch model, with a transformers based text-encoder
+        dataset: object of type InLegalNERDataset
+    Desc: Performs overall training and validation over provided 
+        data and model type
+    """
     optimizer = AdamW(model.parameters(),
                       lr=config_data["LEARNING_RATE"],
                       weight_decay=config_data["WEIGHT_DECAY"])
@@ -298,20 +368,22 @@ def train(model,
     for epoch in range(config_data["MAX_EPOCHS"]):
         train_loss = train_epoch(model=model,
                                  data_loader=train_data_loader,
-                                 optimizer=optimizer)
+                                 optimizer=optimizer,
+                                 use_crf=dataset.use_crf)
         train_losses.append(train_loss)
 
         val_loss = val_epoch(model=model,
-                             data_loader=val_data_loader)
+                             data_loader=val_data_loader,
+                             use_crf=dataset.use_crf)
         val_losses.append(val_loss)
 
-        val_results = get_val_scores(model,
-                                     tokenizer,
-                                     val_data_loader,
+        val_results = get_val_scores(model=model,
+                                     data_loader=val_data_loader,
                                      desc="Validation Generation Iteration",
                                      epoch=epoch,
-                                     NER_label_encoding_dict=dataset.ner_label_encodings,
-                                     NER_labels_list=dataset.ner_labels_list,
+                                     use_crf=dataset.use_crf,
+                                     ner_labels_encoding=dataset.ner_label_encodings,
+                                     ner_labels_list=dataset.ner_labels_list,
                                      **gen_kwargs)
         val_f1.append(val_results["f1"])
 
@@ -325,7 +397,7 @@ def train(model,
         
         save_model(model,
                    path,
-                   tokenizer)
+                   dataset.tokenizer)
         print("Model saved at path: ", path)
 
         print("---------------------------------------------------------------")
