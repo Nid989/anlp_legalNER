@@ -40,6 +40,32 @@ def load_from_pickle(path_to_file):
         itemlist = pickle.load(fp)
     return itemlist
 
+def save_to_json(path_to_file: str, data: dict):
+    with open(path_to_file, 'w') as outfile:
+        json.dump(data, outfile)
+    print(f"Files saved at location: {path_to_file}")
+
+def save_results(path_to_file: str, results: dict):
+    classnames, f1_scores, precision_scores, recall_scores, numbers = [], [], [], [], []
+    for key, value in results.items():
+        if not key.startswith("overall"):
+            classnames.append(key)
+            f1_scores.append(results[key]["f1"])
+            precision_scores.append(results[key]["precision"])
+            recall_scores.append(results[key]["recall"])
+            numbers.append(results[key]["number"])
+
+    results_df = pd.DataFrame({
+        "CLASS": classnames,
+        "F1": f1_scores,
+        "PRECISION": precision_scores,
+        "RECALL": recall_scores,
+        "COUNT": numbers
+    })
+    results_df.set_index("CLASS", inplace=True)
+    results_df.to_csv(path_to_file)
+    print(f"File saved at location: {path_to_file}")
+
 def load_config(path_to_yaml_file: str):
     """
     load the configuration file as .yaml
@@ -55,3 +81,9 @@ def load_config(path_to_yaml_file: str):
 
 PATH_TO_CONFIG_FILE = "./config.yaml"
 config_data = load_config(PATH_TO_CONFIG_FILE)
+
+# prerequisites
+config_data["PATH_TO_RESULT_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_RESULT_OUTPUT_DIR"], "{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
+config_data["PATH_TO_MODEL_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_MODEL_OUTPUT_DIR"], "{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
+check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"])
+check_and_create_directory(config_data["PATH_TO_MODEL_OUTPUT_DIR"])

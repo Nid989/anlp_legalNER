@@ -433,3 +433,39 @@ def train(model,
         del path
         gc.collect()
         torch.cuda.empty_cache()
+
+def generate_results(model,
+                     dataset):
+    """
+    Args: 
+        model: PyTorch model, with a transformers based text-encoder,
+            can be either [`InLegalBERTforTokenClassification`,
+            `XLMRobertaforTokenClassification`,
+            `XLMRobertaCRFforTokenClassification`,
+            `Ensembler (accumulation of 2 or more model-types)`]
+        dataset: dataset: object of type InLegalNERDataset
+    Returns:
+        Classification report over all the NER classes alongwith
+            Overall F1 score and Accuracy
+    """
+    predictions = []
+    ground_truth = []
+
+    print("Loading validation data...")
+    data_loader = dataset.set_up_data_loader("dev")
+        
+    for batch in tqdm(data_loader):
+        input_ids, attention_mask, labels, _ = batch
+        outputs = model(input_ids=input_ids,
+                                    attention_mask=attention_mask)
+        probabilities = F.softmax(outputs.logits, dim=-1)
+        batch_predictions = probabilities.argmax(dim=-1).to("cpu").tolist()
+        predictions.extend(batch_predictions)
+        ground_truth.extend(labels.to("cpu").tolist())
+
+    del probabilities
+    del batch_predictions
+    gc.collect()
+    torch.cuda.empty_cache()
+    results = get_scores((predictions, ground_truth), full_rep=True)
+    return results
