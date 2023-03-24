@@ -98,6 +98,7 @@ class XLMRobertaCRFforTokenClassification(XLMRobertaPreTrainedModel):
 
         return TokenCRFClassifierOutput(
             loss=loss,
+            logits=logits,
             predictions=predictions,
             prediction_scores=prediction_scores,
             hidden_states=outputs.hidden_states,

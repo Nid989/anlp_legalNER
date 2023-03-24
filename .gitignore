@@ -1,4 +1,6 @@
 /en_core_web_sm
 /__pycache__
 /models/__pycache__
-/trained_models
+/model_checkpoints
+/results
+/.ipynb_checkpoints

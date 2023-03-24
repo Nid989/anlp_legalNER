@@ -9,7 +9,7 @@ SOURCE_COLUMN: "tokens"
 TARGET_COLUMN: "BIOES_tags"
 # "BIO_tags" or "BIOES_tags"
 
-MODEL_CHECKPOINT: "law-ai/InLegalBERT"
+MODEL_CHECKPOINT: "xlm-roberta-base"
 # distilbert-base-uncased 
 # law-ai/InLegalBERT
 # xlm-roberta-base
@@ -25,7 +25,7 @@ VERSION: "v3"
 EXTRACT_FORM: "judgement"
 # "judgement" or "preamble" -> type of InLegal data
 
-USE_CRF: True # Conditional Random Fields 
+USE_CRF: False # Conditional Random Fields 
 USE_ENSEMBLE: True # Whether to use Ensmble approach for prediction
 ENSEMBLE_TOKENIZER: "xlm-roberta-base"
 ENSEMBLE_MODELS: # path to trained NER models
@@ -36,7 +36,7 @@ ENSEMBLE_MODELS: # path to trained NER models
         TARGET_COLUMN: "BIOES_tags"
         USE_CRF: False
         NUM_LABELS: 53
-        PATH: "/content/drive/MyDrive/legal_NER/models/xlm-roberta-base_v3/xlm-roberta-base_v3_epoch_20_07-03-2023-21:00"
+        PATH: "./model_checkpoints/xlm-roberta-base_v3/xlm-roberta-base_v3_epoch_20_07-03-2023-21_00"
     MODEL_2:
         TYPE: "XLMRobertaCRFforTokenClassification"
         VERSION: "v7"
@@ -44,7 +44,7 @@ ENSEMBLE_MODELS: # path to trained NER models
         TARGET_COLUMN: "BIOES_tags"
         USE_CRF: True
         NUM_LABELS: 56
-        PATH: "/content/drive/MyDrive/legal_NER/models/xlm-roberta-base_v7/xlm-roberta-base_v6_epoch_10_21-03-2023-03:46"
+        PATH: "./model_checkpoints/xlm-roberta-base_v7/xlm-roberta-base_v7_epoch_10_21-03-2023-03_46"
 # NOTE: each `sub-model` under the `ensemble_models` should share the same encoder
 # since, target-labels are aligned with encoder's input_ids
 ENSEMBLING_TYPE: "vote"

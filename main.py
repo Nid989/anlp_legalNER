@@ -2,7 +2,7 @@ import os
 import gc
 from pathlib import Path
 import torch
-from models.modeling_xlm_roberta import XLMRobertaCRFforTokenClassification, XLMRobertaForTokenClassification
+from models.modeling_xlm_roberta import XLMRobertaCRFforTokenClassification, XLMRobertaforTokenClassification
 from models.modeling_bert import InLegalBERTForTokenClassification
 from models.ensemble import Ensembler
 from data_utils import InLegalNERDataset
@@ -35,7 +35,7 @@ if __name__ == "__main__":
             if config_data["USE_CRF"]:
                 MODEL = XLMRobertaCRFforTokenClassification.from_pretrained(model_checkpoint, num_labels=dataset.num_labels)
             else:
-                MODEL = XLMRobertaForTokenClassification.from_pretrained(model_checkpoint, num_labels=dataset.num_labels)        
+                MODEL = XLMRobertaforTokenClassification.from_pretrained(model_checkpoint, num_labels=dataset.num_labels)        
         elif "InLegalBERT" in model_checkpoint:
             TOKENIZER = AutoTokenizer.from_pretrained(model_checkpoint)
             dataset = InLegalNERDataset(tokenizer=TOKENIZER)
@@ -61,7 +61,12 @@ if __name__ == "__main__":
         
         # --------------------------- RESULTS --------------------------- # 
         results = generate_results(model=MODEL, dataset=dataset)
-        print(results)
+        # print(results)
+
+        path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), 
+                                config_data['MODEL_CHECKPOINT'].split("/")[-1] + "-finetuned-for-token-classification-" + config_data['VERSION'] + ".csv")
+        save_results(path_to_file=path_to_file, results=results)
+        print("saved results at {}".format(path_to_file))
 
     else: # (limited usuage) using ensemble for xlm-roberta and its derivatives only
         TOKENIZER = AutoTokenizer.from_pretrained(config_data['ENSEMBLE_TOKENIZER'],
@@ -78,7 +83,8 @@ if __name__ == "__main__":
         results = generate_results(model=MODEL, dataset=dataset)
         print(results)
 
-    path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), config_data['MODEL_CHECKPOINT'].split("/")[-1] + "-finetuned-for-token-classification-" + config_data['VERSION'] + ".csv")
-    save_results(path_to_file=path_to_file, results=results)
-    print("saved results at {}".format(path_to_file))
+        path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), 
+                                "xlm-roberta-base-finetuned-for-token-classification-ensemble-v3-v7.csv")
+        save_results(path_to_file=path_to_file, results=results)
+        print("saved results at {}".format(path_to_file))
         

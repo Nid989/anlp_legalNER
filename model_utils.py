@@ -58,12 +58,14 @@ def prediction_procedure(outputs: TokenClassifierOutput,
 
     return final_results
 
-def get_scores(p, ner_labels_encoding, ner_labels_list, full_rep: bool=False):
+def get_scores(p, ner_labels_encoding, ner_labels_list, use_crf: bool=False, full_rep: bool=False):
     """
     Args:
         p: (tuple) includes lists of predictions [0] and lists of gold-labels [1]
         ner_labels_encodings: (dict) ner_labels to unique index mapping
         ner_labels_list: (list) unique ner_labels in the give dataset
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fiels
         full_rep: specifies whether to return overall results including class-wise
             scores or not
     Returns:
@@ -72,21 +74,17 @@ def get_scores(p, ner_labels_encoding, ner_labels_list, full_rep: bool=False):
     """
     predictions, labels = p
     
-    ignore_tags = [ner_labels_encoding['<s>'],
-                   ner_labels_encoding['</s>'],
-                   ner_labels_encoding['<pad>']]
-
     true_predictions = [
-        [ner_labels_list[p] for (p, l) in zip(prediction, label) if l not in ignore_tags]
+        [ner_labels_list[p] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
 
     true_labels = [
-        [ner_labels_list[l] for (p, l) in zip(prediction, label) if l not in ignore_tags]
+        [ner_labels_list[l] for (p, l) in zip(prediction, label) if l != -100]
         for prediction, label in zip(predictions, labels)
     ]
 
-    results = seqeval.compute(predictions=true_predictions, references=true_labels, zero_division=1)
+    results = seqeval.compute(predictions=true_predictions, references=true_labels, zero_division=False)
     
     if full_rep:
         return results
@@ -289,7 +287,8 @@ def get_val_scores(model,
                                    **gen_kwargs)
     result = get_scores(p=(predictions, gold),
                         ner_labels_encoding=ner_labels_encoding,
-                        ner_labels_list=ner_labels_list) 
+                        ner_labels_list=ner_labels_list,
+                        use_crf=use_crf) 
     
     model_checkpoint = config_data["MODEL_CHECKPOINT"]
     version = config_data["VERSION"]
@@ -467,5 +466,9 @@ def generate_results(model,
     del batch_predictions
     gc.collect()
     torch.cuda.empty_cache()
-    results = get_scores((predictions, ground_truth), full_rep=True)
+    
+    results = get_scores((predictions, ground_truth),
+                         ner_labels_encoding=dataset.ner_label_encodings,
+                         ner_labels_list=dataset.ner_labels_list, 
+                         full_rep=True)
     return results
