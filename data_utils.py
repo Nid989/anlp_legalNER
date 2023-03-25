@@ -17,10 +17,11 @@ tqdm.pandas()
 class InLegalNERDataset:
     def __init__(self, tokenizer):
         
-        self.batch_size = config_data["BATCH_SIZE"]
+        self.batch_size = config_data["BATCH_SIZE"] 
         self.max_seq_len = config_data["MAX_SEQUENCE_LEN"]
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.tokenizer = tokenizer
+        self.version = config_data["VERSION"]
         self.source_column = config_data["SOURCE_COLUMN"]
         self.target_column = config_data["TARGET_COLUMN"]
         self.data_dir = config_data["PATH_TO_DATA_DIR"]
@@ -31,9 +32,13 @@ class InLegalNERDataset:
         self.ner_labels_list = list(self.ner_label_encodings)
         self.num_labels = len(self.ner_labels_list)
 
+        if self.version == "v2": # only if version supports using weighted CrossEntropyLoss
+            self.class_weights = self.get_classwise_weights()
+
     def prepare_NER_label_mapping(self):
         """
-        prepare NER_label_encoding_dict, using original class-labels
+        prepare NER_label_encoding_dict, using original class-labels;
+        specific to tagging type usually defined via TARGET_COLUMN
         """
         if self.target_column == "BIOES_tags":
             NER_labels = list(itertools.chain(*[[f"{tag_id}-{classname}" for tag_id in ["B", "I", "E", "S"]] for classname in self.class_labels]))
@@ -50,6 +55,12 @@ class InLegalNERDataset:
     def prepare_dataset(self, 
                         data_type: data_types_="train", 
                         **kwargs):
+        """
+        converts character based NER data into token-based dataset,
+        with appropriate BIO-tagging derived from the offset pre-assigned 
+        in the dataset. Additionally, derives BIOES tag, restructuring 
+        already BIO-tagg'ed data.
+        """
         def convert_char_based_to_token_based(char_based_data):
             # Split token into tokens and create list of token dictionaries
             token_based_data = []
@@ -165,11 +176,20 @@ class InLegalNERDataset:
         del data_type
         gc.collect()
 
-        return df.sample(n=48)
+        return df
 
     def preprocess_dataset(self,
                            dataset: pd.DataFrame):
     
+        """
+        Applys word-piece-tokenization adopted by general
+        transformer-based pretrained models. Also, align `BIO` or
+        `BIOES` tags in correspondance with distrubuted tokens
+        due to WPT. Finally, converts non-tensor data into PyTorch 
+        tensors and aggregate `input_ids`, `attention_mask`, 
+        `labels`(tags), and `mask` (usuage; CRF) together. 
+        """
+
         # is_split_into_words; specifies whether the input sentence tobe tokenized is provides as single string or else as list of tokens/words!
         source = [s for s in dataset[self.source_column].values.tolist()]
         model_inputs = self.tokenizer(source,
@@ -236,6 +256,14 @@ class InLegalNERDataset:
         return model_inputs
     
     def set_up_data_loader(self, data_type: data_types_="train"):
+        """
+        Wrapper function, works by generatin token-based NER `tokens`
+        and `tags` using `prepare_dataset` function. Next, transform 
+        the previously derived dataset (pd.DataFrame) into PyTorch 
+        tensors encompassing input and output features. Finally, a 
+        dataset object is allocated to the aggregation, followed by 
+        disambiguation using provided `batch_size`.
+        """
         dataset = self.prepare_dataset(data_type) 
         dataset = self.preprocess_dataset(dataset=dataset)
         dataset = TensorDataset(dataset["input_ids"],
@@ -248,3 +276,43 @@ class InLegalNERDataset:
                           batch_size=self.batch_size,
                           shuffle=True)
     
+    def get_classwise_weights(self):
+        train_df = prepare_dataset(path_to_data=self.data_dir, 
+                                extract_form=self.extract_form, 
+                                data_type="train") # train only
+
+        def factorize_data(data, key="O"):
+            return [item for item in data if item != key]
+
+        # TODO: need to eliminate the dependecy induced by the "O" tag!
+        # train_df["Class_tags"] = train_df.apply(lambda row: factorize_data(row["BIO_tags"]), axis=1)
+        total_train_class_list = []
+        for index, row in train_df.iterrows():
+            for tag in row[self.target_column]:
+                if not tag == "O":
+                    total_train_class_list.append(tag.split("-")[-1])
+                else:
+                    total_train_class_list.append(tag)
+        # compute classwise counts
+        class_counts = Counter(total_train_class_list)
+        # compute classwise ratio w.r.t min count class
+        min_class_count = class_counts[min(class_counts, key=class_counts.get)]
+        class_counts = {key: min_class_count/value for key, value in class_counts.items()}
+        # generate ordered labels list 
+        classnames = OrderedDict.fromkeys([item.split("-")[-1] for item in self.ner_labels_list])
+        classnames, _ = zip(*list(classnames.items()))
+        # order class->counts mapping using classnames
+        ordered_class_counts = sorted(class_counts.items(), key=lambda pair: classnames.index(pair[0]))
+        # map the weights to BIO-tags # TODO fix this make it adaptable with both BIO and BIOES tagging type
+        if self.target_column == "BIOES_tags":
+            ordered_tag_counts = list(itertools.chain.from_iterable([[(f"B-{class_name}", weight), (f"I-{class_name}", weight), (f"E-{class_name}", weight), (f"S-{class_name}", weight)] \
+                                                                for class_name, weight in ordered_class_counts if class_name != "O"]))
+        elif self.target_column == "BIO_tags":
+            ordered_tag_counts = list(itertools.chain.from_iterable([[(f"B-{class_name}", weight), (f"I-{class_name}", weight)] \
+                                                                for class_name, weight in ordered_class_counts if class_name != "O"]))
+        else:
+            raise ValueError(f"define appropriate target_column; found {self.target_column} \
+                should be either [`BIO_tags`, `BIOES_tag`]")
+        ordered_tag_counts.append(ordered_class_counts[-1])
+        _, weights = zip(*ordered_tag_counts)
+        return weights

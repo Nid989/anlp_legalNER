@@ -13,51 +13,6 @@ from helpers import config_data, check_and_create_directory
 from evaluate import load
 seqeval = load("seqeval")
 
-def prediction_procedure(outputs: TokenClassifierOutput,
-                         offsets: list,
-                         label_map: dict,
-                         texts: list = None):
-    
-    """
-    mimics the oringinal tokenclassification prediction procedure achieved through the transformers
-    pipeline
-    """
-    
-    probabilities = F.softmax(outputs.logits, dim=-1)
-    predictions = probabilities.argmax(dim=-1).tolist()
-
-    final_results = []
-    for seq_idx, _ in enumerate(predictions):
-
-        results = []
-        idx = 0
-        while idx < len(predictions[seq_idx]):
-            pred = predictions[seq_idx][idx]
-            label = label_map[pred]
-            if label != "O":
-                # Remove the B- or I-
-                label = label[2:]
-                start, end = offsets[seq_idx][idx]
-
-                while idx < len(predictions[seq_idx]) and label_map[predictions[seq_idx][idx]] == f"I-{label}":
-                    _, end = offsets[seq_idx][idx]
-                    idx += 1
-
-                results.append({
-                    "entity_group": label, "score": probabilities[seq_idx][idx][pred],
-                    "start": start, "end": end
-                })
-                if texts is not None:
-                    word =  texts[seq_idx][start: end]
-                    result = results.pop()
-                    result["word"] = word
-                    results.append(result)
-                
-            idx += 1
-        final_results.append(results)
-
-    return final_results
-
 def get_scores(p, ner_labels_encoding, ner_labels_list, use_crf: bool=False, full_rep: bool=False):
     """
     Args:
@@ -74,13 +29,18 @@ def get_scores(p, ner_labels_encoding, ner_labels_list, use_crf: bool=False, ful
     """
     predictions, labels = p
     
+    if use_crf:
+        ignore_idx_list = [0, 2, 1] # <s>, </s>, <pad>
+    else:
+        ignore_idx_list = [-100] # pad token
+
     true_predictions = [
-        [ner_labels_list[p] for (p, l) in zip(prediction, label) if l != -100]
+        [ner_labels_list[p] for (p, l) in zip(prediction, label) if l not in ignore_idx_list]
         for prediction, label in zip(predictions, labels)
     ]
 
     true_labels = [
-        [ner_labels_list[l] for (p, l) in zip(prediction, label) if l != -100]
+        [ner_labels_list[l] for (p, l) in zip(prediction, label) if l not in ignore_idx_list]
         for prediction, label in zip(predictions, labels)
     ]
 

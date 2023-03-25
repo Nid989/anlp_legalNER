@@ -6,6 +6,9 @@ import torch.nn as nn
 from transformers.modeling_outputs import TokenClassifierOutput
 from models.modeling_xlm_roberta import XLMRobertaCRFforTokenClassification, XLMRobertaforTokenClassification
 
+# usually defined via a dictionary, consisting of systematic declaration of 
+# attributes including `model_type`, `model_version`(indirect), `model_path`,
+# `if model use_crf?`, and `num_labels` (model specific). 
 
 class Ensembler(nn.Module):
     # should not be trained
