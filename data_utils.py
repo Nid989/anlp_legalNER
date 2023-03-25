@@ -3,11 +3,12 @@ import gc
 import pandas as pd
 import itertools
 from tqdm.auto import tqdm
-import spacy
 from datetime import datetime
+from collections import Counter, OrderedDict
 from helpers import read_data, load_from_pickle
 from helpers import extract_forms_, data_types_
 from helpers import config_data
+import spacy
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
@@ -277,17 +278,12 @@ class InLegalNERDataset:
                           shuffle=True)
     
     def get_classwise_weights(self):
-        train_df = prepare_dataset(path_to_data=self.data_dir, 
-                                extract_form=self.extract_form, 
-                                data_type="train") # train only
-
-        def factorize_data(data, key="O"):
-            return [item for item in data if item != key]
+        train_df = self.prepare_dataset(data_type="train") # train only
 
         # TODO: need to eliminate the dependecy induced by the "O" tag!
         # train_df["Class_tags"] = train_df.apply(lambda row: factorize_data(row["BIO_tags"]), axis=1)
         total_train_class_list = []
-        for index, row in train_df.iterrows():
+        for _, row in train_df.iterrows():
             for tag in row[self.target_column]:
                 if not tag == "O":
                     total_train_class_list.append(tag.split("-")[-1])

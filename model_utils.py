@@ -99,7 +99,7 @@ def train_epoch(model,
         loss.backward()
         optimizer.step()
 
-        pbar.set_description('train_loss={0.3f}'.format(loss.item()))
+        pbar.set_description('train_loss={0:.3f}'.format(loss.item()))
 
     del batch
     del input_ids
@@ -147,7 +147,7 @@ def val_epoch(model,
             loss = outputs.loss
             epoch_val_loss += loss.item()
 
-            pbar.set_description('val_loss={0.3f}'.format(loss.item()))
+            pbar.set_description('val_loss={0:.3f}'.format(loss.item()))
     
     del batch
     del input_ids
