@@ -56,7 +56,6 @@ if __name__ == "__main__":
 
         # --------------------------- TRAINING SETUP --------------------------- # 
         train(model=MODEL,
-            tokenizer=TOKENIZER,
             dataset=dataset)
         
         # --------------------------- RESULTS --------------------------- # 

@@ -14,7 +14,7 @@ MODEL_CHECKPOINT: "xlm-roberta-base"
 # law-ai/InLegalBERT
 # xlm-roberta-base
 # roberta-base
-VERSION: "v3"
+VERSION: "v8"
 # v1 - regular finetunining on judgement data (BIO tagging)
 # v2 - regular finetuning with weighted CrossEntropyLoss on judgement data (BIO tagging)
 # v3 - regular finetuning with BIOES tagging on judgement data (BIOES tagging)
@@ -22,11 +22,11 @@ VERSION: "v3"
 # v5 - dual finetuning, preamble and judgement data # DISCUSS
 # v6 - regular finetuning extended with CRF (Conditional Random Fields) (BIO tagging)
 # v7 - regular finetuning extended with CRF (Conditional Random Fields) (BIOES tagging)
-EXTRACT_FORM: "judgement"
+EXTRACT_FORM: "combined"
 # "judgement" or "preamble" -> type of InLegal data
 
 USE_CRF: False # Conditional Random Fields 
-USE_ENSEMBLE: True # Whether to use Ensmble approach for prediction
+USE_ENSEMBLE: False # Whether to use Ensmble approach for prediction
 ENSEMBLE_TOKENIZER: "xlm-roberta-base"
 ENSEMBLE_MODELS: # path to trained NER models
     MODEL_1: 
@@ -50,9 +50,10 @@ ENSEMBLE_MODELS: # path to trained NER models
 ENSEMBLING_TYPE: "vote"
 
 PATH_TO_DATA_DIR: "./data/" # path to data directory
-PATH_TO_CLASS_LABELS: "./data/judgement_class_labels.pkl" # TODO: add preamble file
+PATH_TO_CLASS_LABELS: "./data/combined_class_labels.pkl" # TODO: add preamble file
 # ./data/judgement_class_labels.pkl -> judgement_data_class_labels
 # ./data/preamble_class_labels.pkl -> preamble_data_class_labels
+# ./data/combined_class_labels.pkl -> combined judgement_data & preamble_data class_labels
 PATH_TO_RESULT_OUTPUT_DIR: "./results/" # path to results directory with `./results/val/` and `./results/test/` sub-directories
 PATH_TO_MODEL_OUTPUT_DIR: "./model_checkpoints/" # path to `trained (saved)` models directory
 

@@ -394,7 +394,8 @@ def train(model,
         torch.cuda.empty_cache()
 
 def generate_results(model,
-                     dataset):
+                     dataset,
+                     use_crf:bool=False):
     """
     Args: 
         model: PyTorch model, with a transformers based text-encoder,
@@ -403,6 +404,8 @@ def generate_results(model,
             `XLMRobertaCRFforTokenClassification`,
             `Ensembler (accumulation of 2 or more model-types)`]
         dataset: dataset: object of type InLegalNERDataset
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fiels
     Returns:
         Classification report over all the NER classes alongwith
             Overall F1 score and Accuracy
@@ -430,5 +433,6 @@ def generate_results(model,
     results = get_scores((predictions, ground_truth),
                          ner_labels_encoding=dataset.ner_label_encodings,
                          ner_labels_list=dataset.ner_labels_list, 
+                         use_crf=use_crf,
                          full_rep=True)
     return results

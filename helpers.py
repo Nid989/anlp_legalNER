@@ -24,7 +24,7 @@ def load_json_file(path_to_file):
     return data
 
 data_types_ = Literal["train", "dev"] # type of dataset `train`, `test` or `validation (devset)`
-extract_forms_ = Literal["judgement", "preamble"] # type of task data `judgement` or `preamble`
+extract_forms_ = Literal["judgement", "preamble", "combined"] # type of task data `judgement` or `preamble`
 
 def read_data(path_to_data: str,
               data_type: data_types_ = "train", 
@@ -111,7 +111,7 @@ PATH_TO_CONFIG_FILE = "./config.yaml"
 config_data = load_config(PATH_TO_CONFIG_FILE)
 
 # prerequisites
-config_data["PATH_TO_RESULT_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_RESULT_OUTPUT_DIR"], "{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
-config_data["PATH_TO_MODEL_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_MODEL_OUTPUT_DIR"], "{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
+config_data["PATH_TO_RESULT_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_RESULT_OUTPUT_DIR"], "./{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
+config_data["PATH_TO_MODEL_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_MODEL_OUTPUT_DIR"], "./{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
 check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"])
 check_and_create_directory(config_data["PATH_TO_MODEL_OUTPUT_DIR"])
