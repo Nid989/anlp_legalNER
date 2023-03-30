@@ -24,9 +24,3 @@ This repository contains the code for team VASPOM for ANLP final project @ Unive
 ----
 
 [Link to project directory](https://drive.google.com/drive/folders/1EPzM7d3qtORmIZubnmnn8o_BP5ceDCWW?usp=sharing)
-
-
-# Docker setup
-
-1. To build an image and install dependencies, run command `docker build -t legalner .` in terminal.
-2. To run an image as a container, run command `docker run legalner`
