@@ -14,7 +14,7 @@ class Ensembler(nn.Module):
     # should not be trained
     def __init__(self,
                  models_dict: dict,
-                 ens_type: str="sum",
+                 ens_type: str="soft",
                  **kwargs):
         super(Ensembler, self).__init__()
 
@@ -74,9 +74,9 @@ class Ensembler(nn.Module):
             ensemble_logits.append(self.align_crf_logits(outputs.logits) if crf_flag else outputs.logits)
         assert len(set([logits.shape[2] for logits in ensemble_logits])) == 1; "dimensionality mismatch!"
 
-        if self.ens_type == "sum":
+        if self.ens_type == "soft":
             ensemble_logits = torch.sum(torch.stack(ensemble_logits, dim=-1), dim=-1) / len(self.models)
-        elif self.ens_type == "vote": # max-voting
+        elif self.ens_type == "max": # max-voting
             ensemble_logits, _ = torch.mode(torch.stack(ensemble_logits, dim=-1), dim=-1)
         else:
             raise ValueError(f"define appropriate ens_type; found {self.ens_type}; should be either [`sum`, `vote`]")
