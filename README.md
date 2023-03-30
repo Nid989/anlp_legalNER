@@ -20,6 +20,7 @@ This repository contains the code for team VASPOM for ANLP final project @ Unive
 `v8` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIOES tagging on Combined dataset
 
 `v3-v7` - Ensemble of v3 and v7 using max-voting
+
 ----
 
 [Link to project directory](https://drive.google.com/drive/folders/1EPzM7d3qtORmIZubnmnn8o_BP5ceDCWW?usp=sharing)
