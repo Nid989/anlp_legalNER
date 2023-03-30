@@ -3,23 +3,23 @@ This repository contains the code for team VASPOM for ANLP final project @ Unive
 
 ----
 
-`v1` - Regular Finetunining with BIO tagging on judgement data
+`v1` - Regular Finetunining with BIO tagging on judgement data (XLMR, InLegalBERT)
 
-`v2` - Regular Finetuning with weighted CrossEntropyLoss on judgement data
+`v2` - Regular Finetuning with weighted CrossEntropyLoss on judgement data (XLMR, InLegalBERT)
 
-`v3` - Regular Finetuning with BIOES tagging on judgement data
+`v3` - Regular Finetuning with BIOES tagging on judgement data (XLMR, InLegalBERT)
 
-`v4` - Regualr Finetuning on preamble data
+`v4` - Regualr Finetuning on preamble data (InLegalBERT)
 
-`v5` - Dual Finetuning, preamble and judgement data
+`v5` - Dual Finetuning, preamble and judgement data NOT MENTIONING
 
-`v6` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIO tagging
+`v6` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIO tagging (XLMR)
 
-`v7` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIOES tagging
+`v7` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIOES tagging (XLMR)
 
-`v8` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIOES tagging on Combined dataset
+`v8` - Regular Finetuning extended with CRF (Conditional Random Fields) with BIOES tagging on Combined dataset (XLMR)
 
-`v3-v7` - Ensemble of v3 and v7 using max-voting
+`v3-v7` - Ensemble of v3 and v7 using max-voting (XLMR)
 
 ----
 
