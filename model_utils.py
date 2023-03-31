@@ -3,8 +3,10 @@ import gc
 import shutil
 import pandas as pd
 from tqdm.auto import tqdm
+from pathlib import Path
 from datetime import datetime
 import torch
+from helpers import save_results
 import torch.nn.functional as F
 from torch.optim import AdamW
 from transformers.modeling_utils import PreTrainedModel, unwrap_model
@@ -12,6 +14,17 @@ from transformers.modeling_outputs import TokenClassifierOutput
 from helpers import config_data, check_and_create_directory
 from evaluate import load
 seqeval = load("seqeval")
+
+import seaborn as sns
+from pylab import rcParams
+import matplotlib.pyplot as plt
+from matplotlib import rc
+from sklearn.metrics import confusion_matrix
+
+sns.set(style='whitegrid', palette='muted', font_scale=1.2)
+HAPPY_COLORS_PALETTE = ["#01BEFE", "#FFDD00", "#FF7D00", "#FF006D", "#ADFF02", "#8F00FF"]
+sns.set_palette(sns.color_palette(HAPPY_COLORS_PALETTE))
+rcParams['figure.figsize'] = 12, 8
 
 def get_scores(p, ner_labels_encoding, ner_labels_list, use_crf: bool=False, full_rep: bool=False):
     """
@@ -416,14 +429,21 @@ def generate_results(model,
     print("Loading validation data...")
     data_loader = dataset.set_up_data_loader("dev")
         
-    for batch in tqdm(data_loader):
-        input_ids, attention_mask, labels, _ = batch
-        outputs = model(input_ids=input_ids,
-                                    attention_mask=attention_mask)
-        probabilities = F.softmax(outputs.logits, dim=-1)
-        batch_predictions = probabilities.argmax(dim=-1).to("cpu").tolist()
-        predictions.extend(batch_predictions)
-        ground_truth.extend(labels.to("cpu").tolist())
+    if use_crf:
+        for batch in tqdm(data_loader):
+            input_ids, attention_mask, labels, _ = batch
+            outputs = model(input_ids, attention_mask)
+            predictions.extend(outputs.predictions.cpu().tolist())
+            ground_truth.extend(labels.to("cpu").tolist()) 
+    else:
+        for batch in tqdm(data_loader):
+            input_ids, attention_mask, labels, _ = batch
+            outputs = model(input_ids=input_ids,
+                                        attention_mask=attention_mask)
+            probabilities = F.softmax(outputs.logits, dim=-1)
+            batch_predictions = probabilities.argmax(dim=-1).to("cpu").tolist()
+            predictions.extend(batch_predictions)
+            ground_truth.extend(labels.to("cpu").tolist())
 
     del probabilities
     del batch_predictions
@@ -435,4 +455,81 @@ def generate_results(model,
                          ner_labels_list=dataset.ner_labels_list, 
                          use_crf=use_crf,
                          full_rep=True)
+    
+    path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), 
+                                "./final_results_dev/" + config_data["MODEL_CHECKPOINT"].split("/")[-1] + + "-finetuned-for-token-classification-" + config_data["VERSION"] + ".csv")
+    save_results(path_to_file=path_to_file, results=results)
+    print("results file saved @ ", path_to_file)
+
     return results
+
+
+def generate_confusion_matrix(model,
+                            dataset, 
+                            use_crf: bool=False):
+    """
+    Args: 
+        model: PyTorch model, with a transformers based text-encoder,
+            can be either [`InLegalBERTforTokenClassification`,
+            `XLMRobertaforTokenClassification`,
+            `XLMRobertaCRFforTokenClassification`,
+            `Ensembler (accumulation of 2 or more model-types)`]
+        dataset: dataset: object of type InLegalNERDataset
+        use_crf: (bool) specifies whether the `model` extends to 
+            Conditional Random Fiels
+    Returns:
+        generate confusion matrix and saves the plot @ PATH_TO_RESULT_OUTPUT_DIR
+    """
+
+    predictions = []
+    ground_truth = []
+
+    print("Loading validation data...")
+    data_loader = dataset.set_up_data_loader("dev")
+        
+    if use_crf:
+        for batch in tqdm(data_loader):
+            input_ids, attention_mask, labels, mask = batch
+            outputs = model(input_ids, attention_mask)
+            predictions.extend(outputs.predictions.cpu().tolist())
+            ground_truth.extend(labels.to("cpu").tolist()) 
+    else:
+        for batch in tqdm(data_loader):
+            input_ids, attention_mask, labels, _ = batch
+            outputs = model(input_ids=input_ids,
+                                        attention_mask=attention_mask)
+            probabilities = F.softmax(outputs.logits, dim=-1)
+            batch_predictions = probabilities.argmax(dim=-1).to("cpu").tolist()
+            predictions.extend(batch_predictions)
+            ground_truth.extend(labels.to("cpu").tolist())
+
+    # if use_crf [<s>, </s>, <pad>] else [-100]
+    ignore_idx_list = [0, 2, 1] if use_crf else [-100] 
+
+    true_predictions = [
+        [dataset.ner_labels_list[p] for (p, l) in zip(prediction, label) if l not in ignore_idx_list]
+        for prediction, label in zip(predictions, ground_truth)
+    ]
+
+    true_labels = [
+        [dataset.ner_labels_list[l] for (p, l) in zip(prediction, label) if l not in ignore_idx_list]
+        for prediction, label in zip(predictions, ground_truth)
+    ]
+
+    true_predictions = [tag.split('-')[-1] for instance in true_predictions for tag in instance]
+    true_labels = [tag.split('-')[-1] for instance in true_labels for tag in instance]
+
+    cm = confusion_matrix(true_predictions, true_labels, labels=dataset.class_labels) # generate confusion_matrix
+
+    sns.set()
+    sns.heatmap(cm, annot=True, cmap='PuRd', fmt='d', xticklabels=dataset.class_labels, yticklabels=dataset.class_labels)
+
+    # set plot labels
+    plt.xlabel('Predicted Label')
+    plt.ylabel('True Label')
+    
+    PATH_TO_RESULT_OUTPUT_DIR = config_data["PATH_TO_RESULT_OUTPUT_DIR"] # retrieve path to `results` directory
+    # save heatmap
+    plt.savefig(os.path.join(str(Path(PATH_TO_RESULT_OUTPUT_DIR).parent), "./confusion_matrix/" + config_data["MODEL_CHECKPOINT"].split("/")[-1] + "-finetuned-for-token-classification-" + config_data["VERSION"] + '_confusion_matrix.jpg'), dpi=300, bbox_inches='tight')
+    print("confusion matrix saved @ ", os.path.join(str(Path(PATH_TO_RESULT_OUTPUT_DIR).parent), "./confusion_matrix/" + config_data["MODEL_CHECKPOINT"].split("/")[-1] + "-finetuned-for-token-classification-" + config_data["VERSION"] + '_confusion_matrix.png'))
+    plt.show()

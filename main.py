@@ -1,14 +1,13 @@
 import os
 import gc
-from pathlib import Path
 import torch
 from models.modeling_xlm_roberta import XLMRobertaCRFforTokenClassification, XLMRobertaforTokenClassification
 from models.modeling_bert import InLegalBERTForTokenClassification
 from models.ensemble import Ensembler
 from data_utils import InLegalNERDataset
 
-from helpers import config_data, save_results
-from model_utils import train, generate_results
+from helpers import config_data
+from model_utils import train, generate_results, generate_confusion_matrix
 from transformers import AutoTokenizer
 import warnings
 
@@ -57,15 +56,14 @@ if __name__ == "__main__":
         # --------------------------- TRAINING SETUP --------------------------- # 
         train(model=MODEL,
             dataset=dataset)
-        
-        # --------------------------- RESULTS --------------------------- # 
-        results = generate_results(model=MODEL, dataset=dataset)
-        # print(results)
 
-        path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), 
-                                config_data['MODEL_CHECKPOINT'].split("/")[-1] + "-finetuned-for-token-classification-" + config_data['VERSION'] + ".csv")
-        save_results(path_to_file=path_to_file, results=results)
-        print("saved results at {}".format(path_to_file))
+        # --------------------------- RESULTS --------------------------- # 
+        results = generate_results(model=MODEL, dataset=dataset, use_crf=config_data["USE_CRF"])
+        print(results)
+
+        # plot confusion matrix
+        generate_confusion_matrix(model=MODEL, dataset=dataset, use_crf=config_data["USE_CRF"])
+
 
     else: # (limited usuage) using ensemble for xlm-roberta and its derivatives only
         TOKENIZER = AutoTokenizer.from_pretrained(config_data['ENSEMBLE_TOKENIZER'],
@@ -79,11 +77,9 @@ if __name__ == "__main__":
                         start_idx=0, end_idx=2, pad_idx=1)
         
         # --------------------------- RESULTS --------------------------- # 
-        results = generate_results(model=MODEL, dataset=dataset)
+        results = generate_results(model=MODEL, dataset=dataset, use_crf=False)
         print(results)
 
-        path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), 
-                                "xlm-roberta-base-finetuned-for-token-classification-ensemble-v3-v7.csv")
-        save_results(path_to_file=path_to_file, results=results)
-        print("saved results at {}".format(path_to_file))
-        
+        # plot confusion matrix
+        generate_confusion_matrix(model=MODEL, dataset=dataset, use_crf=False)
+    

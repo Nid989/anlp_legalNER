@@ -26,7 +26,7 @@ EXTRACT_FORM: "combined"
 # "judgement" or "preamble" -> type of InLegal data
 
 USE_CRF: False # Conditional Random Fields 
-USE_ENSEMBLE: False # Whether to use Ensmble approach for prediction
+USE_ENSEMBLE: True # Whether to use Ensmble approach for prediction
 ENSEMBLE_TOKENIZER: "xlm-roberta-base"
 ENSEMBLE_MODELS: # path to trained NER models
     MODEL_1: 

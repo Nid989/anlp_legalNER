@@ -115,3 +115,5 @@ config_data["PATH_TO_RESULT_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_RES
 config_data["PATH_TO_MODEL_OUTPUT_DIR"] = os.path.join(config_data["PATH_TO_MODEL_OUTPUT_DIR"], "./{}_{}".format(config_data['MODEL_CHECKPOINT'], config_data['VERSION']))
 check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"])
 check_and_create_directory(config_data["PATH_TO_MODEL_OUTPUT_DIR"])
+check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"] + "./confusion_matrix") # separate directory for confusion matrix
+check_and_create_directory(config_data["PATH_TO_RESULT_OUTPUT_DIR"] + "./final_results_dev") # separate directory for dev-set results
