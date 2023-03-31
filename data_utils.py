@@ -12,7 +12,7 @@ import spacy
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 
-nlp = spacy.load('./en_core_web_sm') # load en_core_web_sm model 
+nlp = spacy.load('en_core_web_sm') # load en_core_web_sm model 
 tqdm.pandas()
 
 class InLegalNERDataset:
