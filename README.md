@@ -168,5 +168,5 @@ We provide access to our already trained/finetuned models [here](https://drive.g
 
 We used code for the CRF part of our project that was based on a medium article available [here](https://towardsdatascience.com/implementing-a-linear-chain-conditional-random-field-crf-in-pytorch-16b0b9c4b4ea). The article explains how to implement a linear-chain Conditional Random Field using PyTorch.
 
-We also Inherit the trasnformer model's tokenclassification class attributes for singular processing and save and load functionality. This includes the following classes found [here]() and [here](https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/modeling_bert.py).
+We also Inherit the trasnformer model's tokenclassification class attributes for singular processing and save and load functionality. This includes the following classes found [here](https://github.com/huggingface/transformers/blob/main/src/transformers/models/roberta/modeling_roberta.py) and [here](https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/modeling_bert.py).
 
