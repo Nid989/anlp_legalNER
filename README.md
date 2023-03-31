@@ -24,3 +24,32 @@ This repository contains the code for team VASPOM for ANLP final project @ Unive
 ----
 
 [Link to project directory](https://drive.google.com/drive/folders/1EPzM7d3qtORmIZubnmnn8o_BP5ceDCWW?usp=sharing)
+
+├── data/
+│   ├── NER_DEV/
+│   │   ├── NER_DEV_JUDGEMENT.json
+│   │   ├── NER_DEV_PREAMBLE.json
+│   │   └── NER_DEV_COMBINED.json
+│   ├── NER_TRAIN/
+│   │   ├── NER_TRAIN_JUDGEMENT.json
+│   │   ├── NER_TRAIN_PREAMBLE.json
+│   │   └── NER_TRAIN_COMBINED.json
+│   ├── combined_class_labels.pkl
+│   ├── judgement_class_labels.pkl
+│   └── preamble_class_labels.pkl
+├── models/
+│   ├── CRF.py
+│   ├── ensemble.py
+│   ├── modeling_bert.py
+│   └── modeling_xlm_roberta.py
+├── model_checkpoints/
+├── results/
+│   ├── val
+│   ├── confusion_matrix
+│   └── final_results_dev
+├── config.yaml
+├── helpers.py
+├── data_utils.py
+├── model_utils.py
+├── main.py
+└── .gitignore
