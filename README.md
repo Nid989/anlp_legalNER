@@ -168,3 +168,36 @@ We provide access to our already trained/finetuned models [here](https://drive.g
 
 We used code for the CRF part of our project that was based on a medium article available [here](https://towardsdatascience.com/implementing-a-linear-chain-conditional-random-field-crf-in-pytorch-16b0b9c4b4ea). The article explains how to implement a linear-chain Conditional Random Field using PyTorch.
 
+We also Inherit the trasnformer model's tokenclassification class attributes for singular processing and save and load functionality. This includes the following classes found [here](https://github.com/huggingface/transformers/blob/main/src/transformers/models/roberta/modeling_roberta.py) and [here](https://github.com/huggingface/transformers/blob/main/src/transformers/models/bert/modeling_bert.py).
+
+
+```
+├── data/
+│   ├── NER_DEV/
+│   │   ├── NER_DEV_JUDGEMENT.json
+│   │   ├── NER_DEV_PREAMBLE.json
+│   │   └── NER_DEV_COMBINED.json
+│   ├── NER_TRAIN/
+│   │   ├── NER_TRAIN_JUDGEMENT.json
+│   │   ├── NER_TRAIN_PREAMBLE.json
+│   │   └── NER_TRAIN_COMBINED.json
+│   ├── combined_class_labels.pkl
+│   ├── judgement_class_labels.pkl
+│   └── preamble_class_labels.pkl
+├── models/
+│   ├── CRF.py
+│   ├── ensemble.py
+│   ├── modeling_bert.py
+│   └── modeling_xlm_roberta.py
+├── model_checkpoints/
+├── results/
+│   ├── val
+│   ├── confusion_matrix
+│   └── final_results_dev
+├── config.yaml
+├── helpers.py
+├── data_utils.py
+├── model_utils.py
+├── main.py
+└── .gitignore
+```
