@@ -456,8 +456,7 @@ def generate_results(model,
                          use_crf=use_crf,
                          full_rep=True)
     
-    path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), 
-                                "./final_results_dev/" + config_data["MODEL_CHECKPOINT"].split("/")[-1] + + "-finetuned-for-token-classification-" + config_data["VERSION"] + ".csv")
+    path_to_file=os.path.join(str(Path(config_data['PATH_TO_RESULT_OUTPUT_DIR']).parent), "./final_results_dev/" + config_data["MODEL_CHECKPOINT"].split("/")[-1] + "-finetuned-for-token-classification-" + config_data["VERSION"] + ".csv")
     save_results(path_to_file=path_to_file, results=results)
     print("results file saved @ ", path_to_file)
 
