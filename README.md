@@ -25,6 +25,7 @@ This repository contains the code for team VASPOM for ANLP final project @ Unive
 
 [Link to project directory](https://drive.google.com/drive/folders/1EPzM7d3qtORmIZubnmnn8o_BP5ceDCWW?usp=sharing)
 
+```
 ├── data/
 │   ├── NER_DEV/
 │   │   ├── NER_DEV_JUDGEMENT.json
@@ -53,3 +54,4 @@ This repository contains the code for team VASPOM for ANLP final project @ Unive
 ├── model_utils.py
 ├── main.py
 └── .gitignore
+```
