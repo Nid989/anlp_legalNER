@@ -9,7 +9,7 @@ The below link provide direct access to the task the task dataset. Note. due to 
 - [Train Dataset](https://storage.googleapis.com/indianlegalbert/OPEN_SOURCED_FILES/NER/NER_TRAIN.zip)
 - [Validation Dataset](https://storage.googleapis.com/indianlegalbert/OPEN_SOURCED_FILES/NER/NER_TRAIN.zip)
 
-# Training and Testing Setup
+# Training and Testing Setup(Linux SetUp)
 
 1. Clone the repository
 
@@ -62,17 +62,17 @@ python3 main.py
 ### Hyperparameters and settings for training a Named Entity Recognition (NER) model on InLegal dataset
 
 ### Training settings
-batch_size: [positive integer, e.g. 2
-max_epochs: [positive integer, e.g. 20
-max_sequence_len: [positive integer, e.g. 256
-learning_rate: [positive float, e.g. 1e-4
-weight_decay: [positive float, e.g. 1e-6
-early_stopping_threshold: positive integer, e.g. 5
+batch_size: positive integer, e.g. `2`
+max_epochs: positive integer, e.g. `20`
+max_sequence_len: positive integer, e.g. `256`
+learning_rate: positive float, e.g. `1e-4`
+weight_decay: positive float, e.g. `1e-6`
+early_stopping_threshold: positive integer, e.g. `5`
 
 ### Data settings
-- source_column: "tokens"
-- target_column: "BIO_tags" or "BIOES_tags"
-- extract_form: "judgement", "preamble" or "combined"
+- source_column: `tokens`
+- target_column: `BIO_tags` or `BIOES_tags`
+- extract_form: `judgement`, `preamble` or `combined`
 - path_to_data_dir: path to directory containing input data files
 - path_to_class_labels: path to file containing class labels used for training the model
 
@@ -83,21 +83,22 @@ early_stopping_threshold: positive integer, e.g. 5
 - use_ensemble: True or False
 - ensemble_tokenizer: `distilbert-base-uncased`, `law-ai/InLegalBERT`, `xlm-roberta-base`, or `roberta-base`
 - ensemble_models:
-    * type: `XLMRobertaforTokenClassification` or `XLMRobertaCRFforTokenClassification`
-    * version: model version
-    * source_column: `tokens`
-    * target_column: `BIO_tags` or `BIOES_tags`
-    * use_crf: True or False
-    * num_labels: number of labels
-    * path_to_model_file: path to saved model file
-     
-    * type: `XLMRobertaforTokenClassification` or `XLMRobertaCRFforTokenClassification`
-    * version: model version
-    * source_column: `tokens`
-    * target_column: `BIO_tags` or `BIOES_tags`
-    * use_crf: True or False
-    * num_labels: number of labels
-    * path_to_model_file: path to saved model file
+    * base-model 1
+        * type: `XLMRobertaforTokenClassification` or `XLMRobertaCRFforTokenClassification`
+        * version: model version
+        * source_column: `tokens`
+        * target_column: `BIO_tags` or `BIOES_tags`
+        * use_crf: True or False
+        * num_labels: number of labels
+        * path_to_model_file: path to saved model file
+    * base-model 2
+        * type: `XLMRobertaforTokenClassification` or `XLMRobertaCRFforTokenClassification`
+        * version: model version
+        * source_column: `tokens`
+        * target_column: `BIO_tags` or `BIOES_tags`
+        * use_crf: True or False
+        * num_labels: number of labels
+        * path_to_model_file: path to saved model file
 - ensmbling_type: `max` or `soft`
 - path_to_result_output_dir: path to directory where the results of the training and evaluation will be saved
 - path_to_model_output_dir: path to directory where the trained models will be saved
